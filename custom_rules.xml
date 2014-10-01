@@ -6,6 +6,7 @@
     <property name="tests.dir"          value="./tests"/>
     <property name="tests.src.dir"      value="${tests.dir}/src"/>
     <property name="junit.reports.dir"  value="${tests.dir}/junit-reports"/>
+    <property name="anr.trace.dir"      value="${tests.dir}/anr-trace"/>
 
     <path id="pmd.classpath">
         <pathelement location="."/>
@@ -60,6 +61,14 @@
         </exec>
     </target>
 
+    <target name="get-anr-trace">
+        <mkdir dir="${anr.trace.dir}" />
+        <exec executable="${adb}" failonerror="true" dir="${anr.trace.dir}">
+            <arg value="pull" />
+            <arg value="/data/anr/" />
+        </exec>
+    </target>
+
     <target name="run-tests">
         <exec dir="${tests.dir}" executable="ant">
             <arg value="clean"/>
@@ -68,6 +77,7 @@
             <arg value="test"/>
         </exec>
         <antcall target="get-junit-reports" />
+        <antcall target="get-anr-trace" />
     </target>
 
     <target name="demoVersion">

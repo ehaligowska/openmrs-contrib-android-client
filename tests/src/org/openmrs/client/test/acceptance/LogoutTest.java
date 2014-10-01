@@ -27,7 +27,7 @@ public class LogoutTest extends ActivityInstrumentationTestCase2<DashboardActivi
         solo = new Solo(getInstrumentation());
         getActivity();
         getInstrumentation().waitForIdleSync();
-        if (WaitHelper.waitForActivity(solo, LoginActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND)) {
+        if (WaitHelper.waitForActivity(solo, LoginActivity.class)) {
             LoginHelper.login(solo);
         }
     }
@@ -38,6 +38,7 @@ public class LogoutTest extends ActivityInstrumentationTestCase2<DashboardActivi
 
         assertTrue(WaitHelper.waitForActivity(solo, SettingsActivity.class));
 
+        assertTrue(WaitHelper.waitForText(solo, "Logout"));
         solo.clickInList(3);
 
         //wait for Logout dialog
@@ -56,7 +57,7 @@ public class LogoutTest extends ActivityInstrumentationTestCase2<DashboardActivi
         //Click on Logout button
         ButtonHelper.click(solo, R.id.dialogFormButtonsSubmitButton, "Logout");
 
-        assertTrue(solo.waitForActivity(LoginActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND));
+        assertTrue(WaitHelper.waitForActivity(solo, LoginActivity.class));
     }
 
     @Override
