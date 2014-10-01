@@ -1,6 +1,5 @@
 package org.openmrs.client.test.acceptance.helpers;
 
-import android.view.View;
 import android.widget.EditText;
 
 import com.jayway.android.robotium.solo.Solo;
@@ -30,9 +29,7 @@ public final class LoginHelper {
         solo.enterText(loginPasswordField, PASSWORD);
 
         //Click on Login button
-        View loginButton = solo.getView(org.openmrs.client.R.id.loginButton);
-        WaitHelper.waitForText(solo, LoginHelper.LOGIN_BUTTON);
-        solo.clickOnView(loginButton);
+        ButtonHelper.click(solo, R.id.loginButton, LOGIN_BUTTON);
 
         //Write url
         EditText urlField = (EditText) solo.getView(R.id.openmrsEditText);
@@ -40,9 +37,7 @@ public final class LoginHelper {
         solo.enterText(urlField, SERVER_URL);
 
         //Click on Done button
-        View doneButton = solo.getView(org.openmrs.client.R.id.dialogFormButtonsSubmitButton);
-        WaitHelper.waitForText(solo, LoginHelper.DONE_BUTTON);
-        solo.clickOnView(doneButton);
+        ButtonHelper.click(solo, R.id.dialogFormButtonsSubmitButton, DONE_BUTTON);
 
         return WaitHelper.waitForText(solo, "Login successful");
     }

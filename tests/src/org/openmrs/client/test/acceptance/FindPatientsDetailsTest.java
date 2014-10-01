@@ -17,9 +17,8 @@ import org.openmrs.client.test.acceptance.helpers.WaitHelper;
 public class FindPatientsDetailsTest extends ActivityInstrumentationTestCase2<FindPatientsActivity> {
 
     private Solo solo;
-    private static final String PATIENT_EXIST = "Paul";
+    private static final String PATIENT_EXIST = "Armstrong";
     private static final String PATIENT_NO_EXIST = "Enrique";
-    private static final String MESSAGE = "Wrong activity. FindPatientsActivity expected";
     private static boolean isAuthenticated;
 
     public FindPatientsDetailsTest() {
@@ -35,9 +34,7 @@ public class FindPatientsDetailsTest extends ActivityInstrumentationTestCase2<Fi
         solo = new Solo(getInstrumentation());
         getActivity();
         getInstrumentation().waitForIdleSync();
-    }
 
-    public void testPatientNotExist() throws Exception {
         if (!isAuthenticated) {
             if (!solo.waitForActivity(LoginActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND)) {
                 ((FindPatientsActivity) solo.getCurrentActivity()).moveUnauthorizedUserToLoginScreen();
@@ -48,40 +45,34 @@ public class FindPatientsDetailsTest extends ActivityInstrumentationTestCase2<Fi
             isAuthenticated = true;
             assertTrue(solo.waitForActivity(FindPatientsActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND));
         }
+    }
 
+    public void testPatientNotExist() throws Exception {
         SearchHelper.doSearch(solo, PATIENT_NO_EXIST, "Patient name");
         assertTrue(solo.waitForActivity(FindPatientsSearchActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND));
         assertTrue(WaitHelper.waitForText(solo, "No results found for query \"" +  PATIENT_NO_EXIST + "\""));
 
         solo.goBackToActivity("FindPatientsActivity");
-        solo.waitForActivity(FindPatientsActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND);
-        solo.assertCurrentActivity(MESSAGE, FindPatientsActivity.class);
+        assertTrue(solo.waitForActivity(FindPatientsActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND));
     }
 
     public void testSearchPatient() throws Exception {
-        solo.assertCurrentActivity(MESSAGE, FindPatientsActivity.class);
-
         SearchHelper.doSearch(solo, PATIENT_EXIST, "Patient name");
 
-        solo.waitForActivity(FindPatientsSearchActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND);
-        solo.assertCurrentActivity("Wrong activity. FindPatientsSearchActivity expected", FindPatientsSearchActivity.class);
-
+        assertTrue(solo.waitForActivity(FindPatientsSearchActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND));
         assertTrue(WaitHelper.waitForText(solo, PATIENT_EXIST));
 
         solo.goBackToActivity("FindPatientsActivity");
-        solo.waitForActivity(FindPatientsActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND);
-        solo.assertCurrentActivity(MESSAGE, FindPatientsActivity.class);
+        assertTrue(solo.waitForActivity(FindPatientsActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND));
 
+        //wait for finish requests send to server.
+        solo.sleep(WaitHelper.TIMEOUT_THIRTY_SECOND);
     }
 
     public void testSearchPatientAndSave() throws Exception {
-        solo.assertCurrentActivity(MESSAGE, FindPatientsActivity.class);
-
         SearchHelper.doSearch(solo, PATIENT_EXIST, "Patient name");
 
-        solo.waitForActivity(FindPatientsSearchActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND);
-        solo.assertCurrentActivity("Wrong activity. FindPatientsSearchActivity expected", FindPatientsSearchActivity.class);
-
+        assertTrue(solo.waitForActivity(FindPatientsSearchActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND));
         assertTrue(WaitHelper.waitForText(solo, PATIENT_EXIST));
 
         CheckBox isPatientSave = (CheckBox) solo.getView(R.id.offlineCheckbox);
@@ -93,10 +84,12 @@ public class FindPatientsDetailsTest extends ActivityInstrumentationTestCase2<Fi
         assertTrue(WaitHelper.waitForText(solo, "Available offline"));
 
         solo.goBackToActivity("FindPatientsActivity");
-        solo.waitForActivity(FindPatientsActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND);
-        solo.assertCurrentActivity(MESSAGE, FindPatientsActivity.class);
+        assertTrue(solo.waitForActivity(FindPatientsActivity.class, WaitHelper.TIMEOUT_THIRTY_SECOND));
 
         assertTrue(WaitHelper.waitForText(solo, PATIENT_EXIST));
+
+        //wait for finish all requests sent to server.
+        solo.sleep(WaitHelper.TIMEOUT_THIRTY_SECOND);
     }
 
     @Override
