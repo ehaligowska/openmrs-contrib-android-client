@@ -7,12 +7,14 @@ import android.util.SparseArray;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -47,12 +49,15 @@ public class LoginActivity extends ACBaseActivity {
     private static List<Location> mLocationsList;
     private TextView urlTextView;
     private ImageView urlEdit;
+    private LinearLayout mUrlField;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_view_layout);
-
+      //  mScrollView = (ScrollView) findViewById(R.id.scroll);
+        mUrlField = (LinearLayout) findViewById(R.id.urlField);
         mUsername = (EditText) findViewById(R.id.loginUsernameField);
         mUsername.setText(OpenMRS.getInstance().getUsername());
         mPassword = (EditText) findViewById(R.id.loginPasswordField);
@@ -119,6 +124,7 @@ public class LoginActivity extends ACBaseActivity {
     }
 
     public void showURLDialog() {
+        mUrlField.setVisibility(View.INVISIBLE);
         CustomDialogBundle bundle = new CustomDialogBundle();
         bundle.setTitleViewMessage(getString(R.string.login_dialog_title));
         if (mLastURL.equals(ApplicationConstants.EMPTY_STRING)) {
@@ -180,6 +186,7 @@ public class LoginActivity extends ACBaseActivity {
         mLastURL = ApplicationConstants.EMPTY_STRING;
         OpenMRS.getInstance().setServerUrl(serverURL);
         urlTextView.setText(OpenMRS.getInstance().getServerUrl());
+        mUrlField.setVisibility(View.VISIBLE);
         urlEdit.setVisibility(View.VISIBLE);
         mLocationsList = locationsList;
         List<String> items = getLocationStringList(locationsList);
