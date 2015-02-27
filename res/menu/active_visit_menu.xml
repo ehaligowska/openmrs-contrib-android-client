@@ -17,6 +17,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="org.openmrs.mobile.activities.VisitDashboardActivity">
     <item
+        android:id="@+id/actionCaptureVitals"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/action_capture_vitals" />
+    <item
         android:id="@+id/actionEndVisit"
         android:orderInCategory="100"
         android:showAsAction="never"

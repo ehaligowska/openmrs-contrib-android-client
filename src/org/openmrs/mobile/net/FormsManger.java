@@ -49,28 +49,33 @@ import static org.openmrs.mobile.utilities.ApplicationConstants.API;
 public class FormsManger extends BaseManager {
     public static final String FORM_KEY = "form";
     public static final String URL_KEY = "url";
-
     public static final String VITALS_FORM_NAME = "Vitals XForm";
 
     private StringRequestDecorator mRequestDecorator;
+    private FormManagerListener mformManagerListener;
 
     public FormsManger(Context context) {
         super(context);
+    }
+
+    public FormsManger(Context context, FormManagerListener formManagerListener) {
+        super(context);
+        mformManagerListener = formManagerListener;
+
     }
 
     public void getAvailableFormsList() {
         RequestQueue queue = Volley.newRequestQueue(mContext);
         String xFormsListURL = mOpenMRS.getServerUrl() + API.XFORM_ENDPOINT + API.FORM_LIST;
         mRequestDecorator = new StringRequestDecorator(Request.Method.GET, xFormsListURL,
-                new Response.Listener<String>()
-                {
+                new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         mOpenMRS.getOpenMRSLogger().d(response.toString());
                         Document xFormsDoc = writeResponseToDoc(response);
                         List<FormDetails> formList = getFormDetails(xFormsDoc);
                         if (!formList.isEmpty()) {
-                            for (FormDetails fd: formList) {
+                            for (FormDetails fd : formList) {
                                 if (VITALS_FORM_NAME.equals(fd.formName)) {
                                     downloadForm(fd.formName, fd.downloadUrl);
                                 }
@@ -87,8 +92,7 @@ public class FormsManger extends BaseManager {
         RequestQueue queue = Volley.newRequestQueue(mContext);
         String xFormsListURL = mOpenMRS.getServerUrl() + API.XFORM_ENDPOINT + downloadUrl;
         mRequestDecorator = new StringRequestDecorator(Request.Method.GET, xFormsListURL,
-                new Response.Listener<String>()
-                {
+                new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         mOpenMRS.getOpenMRSLogger().d(response.toString());
@@ -108,8 +112,7 @@ public class FormsManger extends BaseManager {
         RequestQueue queue = Volley.newRequestQueue(mContext);
         String xFormsListURL = mOpenMRS.getServerUrl() + API.XFORM_ENDPOINT + API.XFORM_UPLOAD;
         mRequestDecorator = new StringRequestDecorator(Request.Method.POST, xFormsListURL,
-                new Response.Listener<String>()
-                {
+                new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         mOpenMRS.getOpenMRSLogger().d(response.toString());
@@ -131,15 +134,16 @@ public class FormsManger extends BaseManager {
         String xFormsListURL = mOpenMRS.getServerUrl() + API.XFORM_ENDPOINT + API.XFORM_UPLOAD;
         MultiPartRequest multipartRequest = new MultiPartRequest(xFormsListURL,
                 new GeneralErrorListenerImpl(mContext),
-                new Response.Listener<String>()
-                {
+                new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         ToastUtil.showLongToast(mContext, ToastUtil.ToastType.SUCCESS, mContext.getString(R.string.forms_sent_successfully));
+                        if (mformManagerListener != null) {
+                            mformManagerListener.updateVisitData();
+                        }
                     }
                 }, new File(instancePath), patientUUID) {
         };
-
         queue.add(multipartRequest);
     }
 
@@ -231,4 +235,7 @@ public class FormsManger extends BaseManager {
         FormsLoaderUtil.saveOrUpdateForm(file);
     }
 
+    public static interface FormManagerListener {
+        void updateVisitData();
+    }
 }

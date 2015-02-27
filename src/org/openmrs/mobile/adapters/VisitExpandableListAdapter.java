@@ -98,7 +98,7 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
 
     @Override
     public int getChildrenCount(int groupPosition) {
-        return  1;
+        return 1;
     }
 
     @Override
@@ -159,6 +159,12 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
                 break;
         }
         return rowView;
+    }
+
+    @Override
+    public void notifyDataSetChanged() {
+        this.mChildLayouts = generateChildLayouts();
+        super.notifyDataSetChanged();
     }
 
     @Override

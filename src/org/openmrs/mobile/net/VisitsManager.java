@@ -27,6 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
+import org.openmrs.mobile.activities.CaptureVitalsActivity;
 import org.openmrs.mobile.activities.FindPatientsActivity;
 import org.openmrs.mobile.activities.FindPatientsSearchActivity;
 import org.openmrs.mobile.activities.PatientDashboardActivity;
@@ -54,9 +55,17 @@ public class VisitsManager extends BaseManager {
 
     private int mExpectedResponses;
     private boolean mErrorOccurred;
+    private final VisitManagerListener msth;
+
+    public VisitsManager(Context context, VisitManagerListener sth) {
+        super(context);
+        msth = sth;
+    }
+
 
     public VisitsManager(Context context) {
         super(context);
+        msth = null;
     }
 
     public void getLastVitals(final String patientUUID) {
@@ -110,13 +119,13 @@ public class VisitsManager extends BaseManager {
                                         if (visitId > 0) {
                                             new VisitDAO().updateVisit(visit, visitId, patientID);
                                         } else {
-                                            new VisitDAO().saveVisit(visit, patientID);
+                                            new VisitDAO().saveVisit(visit, patientID, System.currentTimeMillis());
                                         }
                                     }
                                 };
                                 thread.start();
                             } else {
-                                new VisitDAO().saveVisit(visit, patientID);
+                                new VisitDAO().saveVisit(visit, patientID, System.currentTimeMillis());
                             }
                             subtractExpectedResponses(false);
                         }
@@ -141,36 +150,32 @@ public class VisitsManager extends BaseManager {
 
     public void findVisitByUUID(final String visitUUID, final long patientID) {
         RequestQueue queue = Volley.newRequestQueue(mContext);
+        final long date = System.currentTimeMillis();
         String visitURL = mOpenMRS.getServerUrl() + API.REST_ENDPOINT + API.VISIT_DETAILS + File.separator + visitUUID
                 + "&v=custom:(uuid,location:ref,visitType:ref,startDatetime,stopDatetime,encounters:full)";
 
         logger.d(SENDING_REQUEST + visitURL);
-
         JsonObjectRequestWrapper jsObjRequest = new JsonObjectRequestWrapper(Request.Method.GET,
                 visitURL, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(final JSONObject response) {
-                logger.d(response.toString());
 
+                logger.d(response.toString());
                 try {
                     final Visit visit = VisitMapper.map(response);
+                    if (mContext instanceof PatientDashboardActivity || mContext instanceof VisitDashboardActivity || mContext instanceof CaptureVitalsActivity) {
+                        long visitId = new VisitDAO().getVisitsIDByUUID(visit.getUuid());
 
-                    if (mContext instanceof PatientDashboardActivity) {
-                        Thread thread = new Thread() {
-                            @Override
-                            public void run() {
-                                long visitId = new VisitDAO().getVisitsIDByUUID(visit.getUuid());
-
-                                if (visitId > 0) {
-                                    new VisitDAO().updateVisit(visit, visitId, patientID);
-                                } else {
-                                    new VisitDAO().saveVisit(visit, patientID);
-                                }
+                        if (visitId > 0) {
+                            new VisitDAO().updateVisit(visit, visitId, patientID);
+                            if (msth != null) {
+                                msth.updateVisitEncounterList();
                             }
-                        };
-                        thread.start();
+                        } else {
+                            new VisitDAO().saveVisit(visit, patientID, date);
+                        }
                     } else {
-                        new VisitDAO().saveVisit(visit, patientID);
+                        new VisitDAO().saveVisit(visit, patientID, date);
                     }
                     subtractExpectedResponses(false);
 
@@ -234,7 +239,8 @@ public class VisitsManager extends BaseManager {
         queue.add(jsObjRequest);
     }
 
-    public void createVisit(final Patient patient) {
+
+    public void createVisit(final Patient patient, Response.Listener<JSONObject> listener) {
         RequestQueue queue = Volley.newRequestQueue(mContext);
         String visitURL = mOpenMRS.getServerUrl() + API.REST_ENDPOINT + API.VISIT_DETAILS;
         logger.d("Sending request to : " + visitURL);
@@ -246,20 +252,8 @@ public class VisitsManager extends BaseManager {
         params.put("startDatetime", currentDate);
         params.put("location", LocationDAO.findLocationByName(OpenMRS.getInstance().getLocation()).getParentLocationUuid());
 
-        JsonObjectRequestWrapper jsObjRequest = new JsonObjectRequestWrapper(Request.Method.POST, visitURL, new JSONObject(params), new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(final JSONObject response) {
-                logger.d(response.toString());
 
-                try {
-                    Visit visit = VisitMapper.map(response);
-                    long visitID = new VisitDAO().saveVisit(visit, patient.getId());
-                    ((PatientDashboardActivity) mContext).visitStarted(visitID, visitID <= 0);
-                } catch (JSONException e) {
-                    logger.d(e.toString());
-                }
-            }
-        }
+        JsonObjectRequestWrapper jsObjRequest = new JsonObjectRequestWrapper(Request.Method.POST, visitURL, new JSONObject(params), listener
                 , new GeneralErrorListenerImpl(mContext) {
 
             @Override
@@ -323,5 +317,9 @@ public class VisitsManager extends BaseManager {
                         R.string.find_patients_row_toast_patient_save_error);
             }
         }
+    }
+
+    public static interface VisitManagerListener {
+        void updateVisitEncounterList();
     }
 }

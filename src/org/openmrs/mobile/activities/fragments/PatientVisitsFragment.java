@@ -1,5 +1,6 @@
 package org.openmrs.mobile.activities.fragments;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -29,6 +30,7 @@ public class PatientVisitsFragment extends ACBaseFragment {
     private List<Visit> mPatientVisits;
     private Patient mPatient;
     private VisitsManager mVisitsManager;
+    private PatientDashboardActivity.CreateVisitCallbackListener createVisitCallbackListener;
 
     public PatientVisitsFragment() {
     }
@@ -39,6 +41,14 @@ public class PatientVisitsFragment extends ACBaseFragment {
         bundle.putSerializable(ApplicationConstants.BundleKeys.PATIENT_BUNDLE, patient);
         detailsFragment.setArguments(bundle);
         return detailsFragment;
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        if (activity instanceof PatientDashboardActivity) {
+            createVisitCallbackListener = ((PatientDashboardActivity) activity).getCreateVisitCallbackListener();
+        }
     }
 
     @Override
@@ -72,11 +82,10 @@ public class PatientVisitsFragment extends ACBaseFragment {
 
         View fragmentLayout = inflater.inflate(R.layout.fragment_patient_visit, null, false);
         ListView visitList = (ListView) fragmentLayout.findViewById(R.id.patientVisitList);
-        
+
         TextView emptyList = (TextView) fragmentLayout.findViewById(R.id.emptyVisitsListView);
         visitList.setEmptyView(emptyList);
 
-        
         visitList.setAdapter(new PatientVisitsArrayAdapter(getActivity(), mPatientVisits));
         return fragmentLayout;
     }
@@ -84,7 +93,7 @@ public class PatientVisitsFragment extends ACBaseFragment {
     public void startVisit() {
         ((PatientDashboardActivity) getActivity())
                 .showProgressDialog(R.string.action_start_visit, PatientDashboardActivity.DialogAction.ADD_VISIT);
-        mVisitsManager.createVisit(mPatient);
+        mVisitsManager.createVisit(mPatient, createVisitCallbackListener);
     }
 
     private void showStartVisitDialog() {

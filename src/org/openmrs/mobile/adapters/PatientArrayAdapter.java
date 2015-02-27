@@ -96,7 +96,9 @@ public class PatientArrayAdapter extends ArrayAdapter<Patient> {
         if (null != patient.getAge()) {
             holder.mAge.setText(patient.getAge());
         }
-        holder.mBirthDate.setText(DateUtils.convertTime(patient.getBirthDate()));
+        if (null != patient.getBirthDate()) {
+            holder.mBirthDate.setText(DateUtils.convertTime(patient.getBirthDate()));
+        }
         if (null != holder.mAvailableOfflineCheckbox) {
             setUpCheckBoxLogic(holder, patient);
         }

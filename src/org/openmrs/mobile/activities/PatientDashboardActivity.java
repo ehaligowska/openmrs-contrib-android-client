@@ -26,20 +26,29 @@ import android.support.v7.app.ActionBar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.android.volley.Response;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.fragments.CustomFragmentDialog;
 import org.openmrs.mobile.activities.fragments.PatientDetailsFragment;
 import org.openmrs.mobile.activities.fragments.PatientDiagnosisFragment;
 import org.openmrs.mobile.activities.fragments.PatientVisitsFragment;
 import org.openmrs.mobile.activities.fragments.PatientVitalsFragment;
+import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.dao.PatientDAO;
+import org.openmrs.mobile.dao.VisitDAO;
 import org.openmrs.mobile.models.Patient;
+import org.openmrs.mobile.models.Visit;
+import org.openmrs.mobile.models.mappers.VisitMapper;
 import org.openmrs.mobile.net.FindPatientsManager;
 import org.openmrs.mobile.net.VisitsManager;
 import org.openmrs.mobile.utilities.ApplicationConstants;
 import org.openmrs.mobile.utilities.TabUtil;
 import org.openmrs.mobile.utilities.ToastUtil;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +61,7 @@ public class PatientDashboardActivity extends ACBaseActivity implements ActionBa
     private PatientDashboardPagerAdapter mPatientDashboardPagerAdapter;
     private boolean progressDialog;
     private DialogAction mDialogAction;
+
 
     public enum DialogAction {
         SYNCHRONIZE, ADD_VISIT
@@ -79,7 +89,6 @@ public class PatientDashboardActivity extends ACBaseActivity implements ActionBa
             showProgressDialog(R.string.action_synchronize_patients, DialogAction.SYNCHRONIZE);
         }
         mPatient = new PatientDAO().findPatientByUUID(patientBundle.getString(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE));
-        new VisitsManager(this).getLastVitals(mPatient.getUuid());
         mPatientDashboardPagerAdapter = new PatientDashboardPagerAdapter(getSupportFragmentManager(), tabHosts);
         initViewPager();
     }
@@ -325,6 +334,34 @@ public class PatientDashboardActivity extends ACBaseActivity implements ActionBa
 
         public String getTabLabel() {
             return mTabLabel;
+        }
+    }
+
+    public CreateVisitCallbackListener getCreateVisitCallbackListener() {
+        return new CreateVisitCallbackListener(PatientDashboardActivity.this, mPatient.getId(), System.currentTimeMillis())
+        ;
+    }
+
+    public final class CreateVisitCallbackListener implements Response.Listener<JSONObject> {
+        private long mPatientID;
+        private WeakReference<PatientDashboardActivity> patientDashboardActivityWeakReference;
+        private long mStartDate;
+
+        public CreateVisitCallbackListener(PatientDashboardActivity pda, long patientID, long startDate) {
+            patientDashboardActivityWeakReference = new WeakReference<PatientDashboardActivity>(pda);
+            mPatientID = patientID;
+            mStartDate = startDate;
+        }
+
+        @Override
+        public void onResponse(JSONObject response) {
+            try {
+                Visit visit = VisitMapper.map(response);
+                long visitID = new VisitDAO().saveVisit(visit, mPatientID, mStartDate);
+                patientDashboardActivityWeakReference.get().visitStarted(visitID, visitID <= 0);
+            } catch (JSONException e) {
+                OpenMRS.getInstance().getOpenMRSLogger().d(e.toString());
+            }
         }
     }
 }
